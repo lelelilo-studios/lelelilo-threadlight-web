@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#070d18">
+<meta name="description" content="Lelelilo: Threadlight. One night. One golden thread. Every world we ever made.">
+<meta name="author" content="lelelilo.com">
+<meta property="og:title" content="Lelelilo: Threadlight">
+<meta property="og:description" content="One night. One golden thread. Every world we ever made.">
+<meta property="og:image" content="og.jpg">
+<title>Lelelilo: Threadlight</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  :root {
+    --midnight: #070d18; --night: #0f1c2e; --gold: #ffc94a; --thread: #f0bd52; --brass: #b8863b;
+    --cream: #fff4d6; --paper: #f7f3e8; --graphite: #33333b; --red: #d8605a; --faint: #9aa3b2;
+    /* lelelilo.com's needle, as the pointer */
+    --needle: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M2 2 L25 23 L27.5 27.5 L23 25 Z' fill='%23fff4d6' stroke='%23070d18' stroke-width='1.2' stroke-linejoin='round'/><ellipse cx='24.6' cy='24.6' rx='0.9' ry='2.2' transform='rotate(-45 24.6 24.6)' fill='%23070d18'/></svg>") 2 2, auto;
+    --needle-hot: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M26 26 C 32 18, 17 31, 31 31' stroke='%23ffc94a' stroke-width='1.8' fill='none' stroke-linecap='round'/><path d='M2 2 L25 23 L27.5 27.5 L23 25 Z' fill='%234fd8ff' stroke='%23fff4d6' stroke-width='1.2' stroke-linejoin='round'/><ellipse cx='24.6' cy='24.6' rx='0.9' ry='2.2' transform='rotate(-45 24.6 24.6)' fill='%23070d18'/></svg>") 2 2, pointer;
+  }
+  html, body { margin: 0; height: 100%; background: var(--midnight); color: var(--cream); overflow: hidden; overscroll-behavior: none; cursor: var(--needle); }
+  body { font: 500 16px ui-rounded, 'Nunito', 'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  canvas#lelelilo { position: fixed; inset: 0; width: 100vw; height: 100dvh; display: block; touch-action: none; outline: none; cursor: var(--needle); }
+  canvas#lelelilo.hot { cursor: var(--needle-hot); }
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; box-sizing: border-box;
+    padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+    background: radial-gradient(ellipse at 50% 40%, var(--night), var(--midnight) 70%); text-align: center; transition: opacity .6s ease; z-index: 2; }
+  .screen.gone { opacity: 0; pointer-events: none; visibility: hidden; transition: opacity .6s ease, visibility 0s .6s; }
+  .screen.hidden { display: none; }
+  h1 { margin: 0; font: 700 clamp(24px, 5.2vw, 34px) Georgia, 'Alegreya', serif; letter-spacing: .01em; color: var(--cream); }
+  .tag { margin: -8px 0 0; font-size: 14px; color: var(--faint); font-style: italic; }
+  p { margin: 0; max-width: 32em; line-height: 1.5; color: var(--faint); user-select: text; -webkit-user-select: text; }
+  /* The flip book: a pencil Lumina on a little card of paper, hopping while the game arrives */
+  .pad { width: 104px; height: 104px; border-radius: 6px; box-shadow: 0 6px 22px rgba(0,0,0,.45), 0 0 0 1px rgba(255,244,214,.15); transform: rotate(-2deg); }
+  .pad canvas { width: 104px; height: 104px; display: block; border-radius: 6px; }
+  /* Progress: a golden seam a needle sews across */
+  .seam { position: relative; width: min(300px, 72vw); height: 14px; }
+  .seam svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .seam .ghost { stroke: rgba(255,244,214,.18); }
+  .seam .sewn { stroke: var(--gold); filter: drop-shadow(0 0 3px rgba(255,201,74,.6)); }
+  .status { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); }
+  .browsers { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 30em; }
+  .browsers a { color: var(--cream); text-decoration: none; padding: 12px 16px; border-radius: 12px; border: 1.5px dashed rgba(255,201,74,.55); font-weight: 700; cursor: var(--needle-hot); }
+  .err { font: 500 13px ui-monospace, monospace; color: #ffb3a8; white-space: pre-wrap; max-width: min(90vw, 900px); max-height: 40vh; overflow: auto; text-align: left; padding: 12px 14px; border: 1.5px dashed var(--red); border-radius: 12px; user-select: text; -webkit-user-select: text; }
+  .help { max-width: 32em; text-align: left; padding: 12px 16px; border: 1.5px dashed rgba(255,201,74,.4); border-radius: 12px; font-size: 14px; line-height: 1.5; color: var(--cream); }
+  .help.hidden { display: none; }
+  .help ol { margin: 6px 0 0; padding-left: 20px; }
+  code { font: 600 13px ui-monospace, monospace; color: var(--gold); }
+  /* The studio's page, at the foot of the loader's screens */
+  .studio { position: absolute; bottom: max(14px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); padding: 14px 16px;
+    font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--cream); text-decoration: none; cursor: var(--needle-hot); }
+  .studio span { color: var(--gold); }
+  .studio:hover { text-decoration: underline; }
+  @media (prefers-reduced-motion: reduce) { .screen, .screen.gone { transition: none; } }
+</style>
+</head>
+<body>
+<canvas id="lelelilo" tabindex="0" aria-label="Lelelilo: Threadlight"></canvas>
+
+<div class="screen" id="loading" role="status" aria-live="polite">
+  <div class="pad"><canvas id="flip" width="208" height="208"></canvas></div>
+  <h1>Lelelilo: Threadlight</h1>
+  <div class="tag" id="tagline">One night. One golden thread. Every world we ever made.</div>
+  <div class="seam" aria-hidden="true">
+    <svg viewBox="0 0 300 14" preserveAspectRatio="none">
+      <line class="ghost" x1="2" y1="7" x2="298" y2="7" stroke-width="2" stroke-dasharray="6 5" stroke-linecap="round"/>
+      <line class="sewn" id="sewn" x1="2" y1="7" x2="2" y2="7" stroke-width="2.4" stroke-dasharray="6 5" stroke-linecap="round"/>
+      <g id="needle" transform="translate(2 7)"><path d="M-2 -1 L14 -1 L17 0 L14 1 L-2 1 Z" fill="#fff4d6"/><ellipse cx="1" cy="0" rx="1.6" ry="0.5" fill="#070d18"/></g>
+    </svg>
+  </div>
+  <div class="status" id="status">Threading the needle…</div>
+  <a class="studio" href="https://lelelilo.com/?ref=lelelilo-threadlight" target="_blank" rel="noopener">lelelilo<span>.com</span></a>
+</div>
+
+<div class="screen hidden" id="unsupported">
+  <h1>This browser can't open the game</h1>
+  <p>Lelelilo: Threadlight needs <b>WebGPU</b>, which this browser doesn't offer yet. It works in these:</p>
+  <div class="browsers">
+    <a href="https://www.google.com/chrome/" rel="noopener">Chrome · desktop &amp; Android</a>
+    <a href="https://www.microsoft.com/edge" rel="noopener">Edge</a>
+    <a href="https://www.apple.com/safari/" rel="noopener">Safari 26+ · Mac, iPhone, iPad</a>
+  </div>
+  <div class="help hidden" id="linux-help"></div>
+  <p id="why" style="font-size:13px"></p>
+  <a class="studio" href="https://lelelilo.com/?ref=lelelilo-threadlight" target="_blank" rel="noopener">lelelilo<span>.com</span></a>
+</div>
+
+<div class="screen hidden" id="failed">
+  <h1>The thread snagged</h1>
+  <p>Something went wrong while starting the game. Starting it again usually helps.</p>
+  <div class="browsers"><a href="." id="again">Try again</a></div>
+  <div class="err" id="errtext"></div>
+  <a class="studio" href="https://lelelilo.com/?ref=lelelilo-threadlight" target="_blank" rel="noopener">lelelilo<span>.com</span></a>
+</div>
+
+<script src="lelelilo-intro/lelelilo-intro.js"></script>
+<script>
+  // The studio intro plays over everything while the game downloads and starts. Checks (`?capture`, `?check`)
+  // skip it, so they see the game at once.
+  (function () {
+    const q = new URLSearchParams(location.search);
+    window.__tl_intro_playing = false;
+    if (q.has('capture') || q.has('check') || !window.LeleliloIntro) return;
+    window.__tl_intro_playing = true;
+    const gameReady = new Promise((resolve) => { window.gameIsReady = resolve; });
+    LeleliloIntro.play({
+      base: 'lelelilo-intro/',
+      until: gameReady,
+      // a press during the intro also wakes the game's sound
+      onGesture: () => { if (window.__tl_unlock_audio) window.__tl_unlock_audio(); },
+    }).then(() => { window.__tl_intro_playing = false; });
+  })();
+</script>
+<script type="module">
+  // `cargo xtask web` writes the build's id here, so a browser fetches the new game after each build
+  const BUILD = '2daa2ee';
+  window.__lelelilo_build = BUILD;
+  const $ = id => document.getElementById(id);
+  const show = id => { for (const s of ['loading', 'unsupported', 'failed']) $(s).classList.toggle('hidden', s !== id); };
+  const ES = /^es\b/i.test(navigator.language || '') || new URLSearchParams(location.search).get('lang') === 'es';
+  if (ES) {
+    document.documentElement.lang = 'es';
+    $('tagline').textContent = 'Una noche. Un hilo dorado. Todos los mundos que hicimos.';
+    $('status').textContent = 'Enhebrando la aguja…';
+  }
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // The seam: a needle sews a golden line across as the game arrives
+  let shown = 0, wanted = 0;
+  const setProgress = k => { wanted = Math.max(wanted, Math.max(0, Math.min(1, k))); };
+  function sew() {
+    shown += (wanted - shown) * (reduce ? 1 : 0.18);
+    const x = 2 + 296 * shown;
+    $('sewn').setAttribute('x2', x.toFixed(1));
+    $('needle').setAttribute('transform', `translate(${x.toFixed(1)} ${(7 + Math.sin(shown * 60) * 1.2).toFixed(2)})`);
+  }
+
+  // The flip book (lelelilo.com's): a pencil Lumina hops on a card of paper, her lines boiling like drawn frames
+  const flip = $('flip'), ctx = flip.getContext('2d'), S = flip.width / 104;
+  const rng = (seed) => () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const P = [[8, 8], [[22, 13], [42, 13], [56, 8]], [[51, 22], [51, 42], [56, 56]], [[42, 51], [22, 51], [8, 56]], [[13, 42], [13, 22], [8, 8]]];
+  function pillow(tx, ty, sx, sy, j) {
+    const m = (x, y) => [tx + (x - 32) * sx + j(), ty + (y - 56) * sy + j()];
+    ctx.beginPath(); const s = m(P[0][0], P[0][1]); ctx.moveTo(s[0], s[1]);
+    for (let i = 1; i < P.length; i++) { const [a, b, c] = P[i]; const A = m(a[0], a[1]), B = m(b[0], b[1]), C = i === P.length - 1 ? s : m(c[0], c[1]); ctx.bezierCurveTo(A[0], A[1], B[0], B[1], C[0], C[1]); }
+    ctx.closePath();
+  }
+  function draw(frame) {
+    const r = rng(frame * 7919 + 13), j = (a = 1.1) => () => (r() - 0.5) * a * 2;
+    ctx.setTransform(S, 0, 0, S, 0, 0);
+    ctx.fillStyle = '#fffdf7'; ctx.fillRect(0, 0, 104, 104);
+    const p = (frame % 12) / 12, air = Math.sin(Math.PI * p), land = Math.max(0, 1 - Math.min(p, 1 - p) / 0.12);
+    const sy = 1 + 0.1 * air - 0.14 * land, sx = 1 / Math.sqrt(sy), ground = 80, y = ground - air * 18, k = 0.98;
+    ctx.fillStyle = 'rgba(51,51,59,.16)'; ctx.beginPath(); ctx.ellipse(52, ground + 1, 19 * (1 - air * 0.35), 3.2 * (1 - air * 0.3), 0, 0, Math.PI * 2); ctx.fill();
+    pillow(53.5, y + 1.2, sx * k, sy * k, j(0.6)); ctx.fillStyle = 'rgba(255,194,58,.5)'; ctx.fill();
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    pillow(52, y, sx * k, sy * k, j(1)); ctx.strokeStyle = '#33333b'; ctx.lineWidth = 1.7; ctx.stroke();
+    pillow(52, y, sx * k, sy * k, j(1.6)); ctx.strokeStyle = 'rgba(51,51,59,.4)'; ctx.lineWidth = 0.7; ctx.stroke();
+    const fy = y - 27 * sy * k, J = j(0.5);
+    ctx.fillStyle = '#33333b';
+    if (frame % 24 === 9 || frame % 24 === 10) { ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(43 + J(), fy); ctx.lineTo(48 + J(), fy); ctx.moveTo(56 + J(), fy); ctx.lineTo(61 + J(), fy); ctx.stroke(); }
+    else { ctx.beginPath(); ctx.ellipse(45.5 + J(), fy, 2.2, 2.9 * sy, 0, 0, 7); ctx.ellipse(58.5 + J(), fy, 2.2, 2.9 * sy, 0, 0, 7); ctx.fill(); }
+    ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(48.5, fy + 6); ctx.quadraticCurveTo(52 + J(), fy + 9.5 + air * 1.5, 55.5, fy + 6); ctx.stroke();
+    if (air > 0.55) { ctx.strokeStyle = 'rgba(51,51,59,.55)'; ctx.lineWidth = 1; ctx.beginPath(); for (const x of [44, 52, 60]) { ctx.moveTo(x + J(), y + 6); ctx.lineTo(x + J(), y + 11 + air * 4); } ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(51,51,59,.35)'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(14, ground + 5 + J()); ctx.lineTo(90, ground + 5 + J()); ctx.stroke();
+    // the golden thread: the seam's progress, sewn along the foot of the card too
+    ctx.strokeStyle = '#e0a52a'; ctx.lineWidth = 1.6; ctx.setLineDash([3, 2.4]);
+    ctx.beginPath(); ctx.moveTo(8, 96); ctx.lineTo(8 + 88 * shown, 96 + J()); ctx.stroke(); ctx.setLineDash([]);
+  }
+  let frame = 0, last = 0, looping = true;
+  function tick(t) {
+    if (!looping) return;
+    if (t - last > 110) { last = t; if (!reduce) frame = (frame + 1) % 24; }
+    sew(); draw(frame);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  const fail = e => { console.error(e); looping = false; $('errtext').textContent = String(e && e.message || e); show('failed'); if (window.gameIsReady) window.gameIsReady(); };
+  $('again').addEventListener('click', e => { e.preventDefault(); location.reload(); });
+  const LINUX = /Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent);
+  // On Linux, browsers keep WebGPU switched off for now: say how to switch it on
+  const linuxHelp = () => `<b>On Linux</b>, WebGPU is still switched off by default. In Chrome, Chromium, Brave or Edge:
+    <ol><li>Open <code>chrome://flags</code> and set <b>Unsafe WebGPU Support</b> to Enabled,</li>
+    <li><b>Vulkan</b> to Enabled,</li><li><b>Preferred Ozone platform</b> to X11,</li><li>then relaunch the browser.</li></ol>`;
+
+  // WebGPU or nothing: there is no WebGL version of the game to fall back to
+  async function hasWebGPU() {
+    if (!navigator.gpu) return 'This browser has no WebGPU.';
+    try { const a = await navigator.gpu.requestAdapter(); return a ? null : 'WebGPU is present but found no usable graphics adapter.'; }
+    catch (e) { return 'WebGPU could not start: ' + e.message; }
+  }
+
+  // Download the game with progress (the seam is sewn as the bytes arrive)
+  async function fetchWasm(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Could not download the game (${res.status})`);
+    const total = +res.headers.get('content-length') || 0, reader = res.body.getReader(), parts = [];
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read(); if (done) break;
+      parts.push(value); got += value.length;
+      setProgress(total ? got / total * 0.85 : Math.min(0.85, got / 2.2e6));
+    }
+    return new Response(new Blob(parts), { headers: { 'Content-Type': 'application/wasm' } });
+  }
+
+  (async () => {
+    const why = await hasWebGPU();
+    if (why) {
+      looping = false;
+      $('why').textContent = why;
+      if (LINUX) { $('linux-help').innerHTML = linuxHelp(); $('linux-help').classList.remove('hidden'); }
+      show('unsupported');
+      if (window.gameIsReady) window.gameIsReady();
+      return;
+    }
+    try {
+      // The game says when its first frame is up, or that it could not start
+      addEventListener('lelelilo-error', e => fail(e.detail));
+      addEventListener('lelelilo-ready', () => {
+        setProgress(1); $('status').textContent = ES ? 'Listo' : 'Ready';
+        setTimeout(() => { $('loading').classList.add('gone'); looping = false; }, 260);
+        if (window.gameIsReady) window.gameIsReady();
+        $('lelelilo').focus();
+      }, { once: true });
+      const [{ default: init }, wasm] = await Promise.all([import(`./pkg/tl.js?v=${BUILD}`), fetchWasm(`./pkg/tl_bg.wasm?v=${BUILD}`)]);
+      setProgress(0.9);
+      $('status').textContent = ES ? 'Cosiendo la noche…' : 'Sewing the night…';
+      await init({ module_or_path: wasm });
+    } catch (e) { fail(e); }
+  })();
+</script>
+</body>
+</html>
