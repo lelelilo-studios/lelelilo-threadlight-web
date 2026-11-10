@@ -54,7 +54,13 @@
     font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--cream); text-decoration: none; cursor: var(--needle-hot); }
   .studio span { color: var(--gold); }
   .studio:hover { text-decoration: underline; }
-  @media (prefers-reduced-motion: reduce) { .screen, .screen.gone { transition: none; } }
+  /* A phone held upright: the game is a landscape one, so it asks to be turned */
+  #rotate { display: none; z-index: 6; }
+  @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+  .phone { width: 46px; height: 78px; border: 2.5px solid var(--cream); border-radius: 9px; position: relative; animation: turn 2.6s ease-in-out infinite; }
+  .phone::after { content: ''; position: absolute; left: 50%; bottom: 5px; width: 12px; height: 2.5px; margin-left: -6px; border-radius: 2px; background: var(--gold); }
+  @keyframes turn { 0%, 25% { transform: rotate(0deg); } 55%, 100% { transform: rotate(-90deg); } }
+  @media (prefers-reduced-motion: reduce) { .screen, .screen.gone { transition: none; } .phone { animation: none; transform: rotate(-90deg); } }
 </style>
 </head>
 <body>
@@ -96,6 +102,12 @@
   <a class="studio" href="https://lelelilo.com/?ref=lelelilo-threadlight" target="_blank" rel="noopener">lelelilo<span>.com</span></a>
 </div>
 
+<div class="screen" id="rotate" role="status">
+  <div class="phone" aria-hidden="true"></div>
+  <h1 id="rotate-title">Turn your phone sideways</h1>
+  <p id="rotate-text">Threadlight is played in landscape.</p>
+</div>
+
 <script src="lelelilo-intro/lelelilo-intro.js"></script>
 <script>
   // The studio intro plays over everything while the game downloads and starts. Checks (`?capture`, `?check`)
@@ -111,12 +123,17 @@
       until: gameReady,
       // a press during the intro also wakes the game's sound
       onGesture: () => { if (window.__tl_unlock_audio) window.__tl_unlock_audio(); },
-    }).then(() => { window.__tl_intro_playing = false; });
+    }).then(() => {
+      window.__tl_intro_playing = false;
+      // the keyboard goes back to the game
+      const c = document.getElementById('lelelilo');
+      if (c) c.focus({ preventScroll: true });
+    });
   })();
 </script>
 <script type="module">
   // `cargo xtask web` writes the build's id here, so a browser fetches the new game after each build
-  const BUILD = '01593e5';
+  const BUILD = 'dcafdb4';
   window.__lelelilo_build = BUILD;
   const $ = id => document.getElementById(id);
   const show = id => { for (const s of ['loading', 'unsupported', 'failed']) $(s).classList.toggle('hidden', s !== id); };
@@ -125,8 +142,39 @@
     document.documentElement.lang = 'es';
     $('tagline').textContent = 'Una noche. Un hilo dorado. Todos los mundos que hicimos.';
     $('status').textContent = 'Enhebrando la aguja…';
+    $('rotate-title').textContent = 'Gira tu teléfono';
+    $('rotate-text').textContent = 'Threadlight se juega en horizontal.';
   }
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // The game hears keys through its canvas, so the canvas keeps the page's focus: coming back to the tab, or a key
+  // pressed while something else holds it, hands it back (and that key is passed on, not lost)
+  const canvas = $('lelelilo');
+  const playing = () => $('loading').classList.contains('gone') && !window.__tl_intro_playing;
+  const refocus = () => { if (playing() && document.activeElement !== canvas) canvas.focus({ preventScroll: true }); };
+  addEventListener('focus', refocus);
+  addEventListener('pointerdown', refocus);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refocus(); });
+  for (const type of ['keydown', 'keyup']) addEventListener(type, e => {
+    if (!playing() || e.target === canvas || !e.isTrusted || e.metaKey || e.ctrlKey || e.altKey) return;
+    refocus();
+    canvas.dispatchEvent(new KeyboardEvent(type, { key: e.key, code: e.code, location: e.location, repeat: e.repeat, shiftKey: e.shiftKey, bubbles: true, cancelable: true }));
+    e.preventDefault();
+  });
+
+  // The whole screen: F on a keyboard; on a phone the first touch asks for it (and for landscape), since the
+  // browser's own bars take a good part of so small a screen. A browser that refuses is left as it is.
+  const root = document.documentElement;
+  const whole = () => document.fullscreenElement || document.webkitFullscreenElement;
+  const enter = () => { try { const p = (root.requestFullscreen || root.webkitRequestFullscreen)?.call(root, { navigationUI: 'hide' }); p?.then?.(() => screen.orientation?.lock?.('landscape')?.catch?.(() => {}))?.catch?.(() => {}); } catch { /* not here */ } };
+  const leave = () => { try { (document.exitFullscreen || document.webkitExitFullscreen)?.call(document); } catch { /* not here */ } };
+  addEventListener('keydown', e => { if (e.code === 'KeyF' && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey && playing()) (whole() ? leave : enter)(); });
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  let asked = false;
+  addEventListener('touchend', () => { if (coarse && !asked && playing() && !whole()) { asked = true; enter(); } });
+  // held upright, the game waits (its window "loses the focus", so a scene being played pauses)
+  const upright = matchMedia('(orientation: portrait) and (pointer: coarse)');
+  upright.addEventListener('change', () => { if (upright.matches) canvas.blur(); else refocus(); });
 
   // The seam: a needle sews a golden line across as the game arrives
   let shown = 0, wanted = 0;
